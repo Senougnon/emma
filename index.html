@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paiement avec FedaPay</title>
+    <script src="https://cdn.fedapay.com/checkout.js"></script>
+</head>
+<body>
+    <h1>Paiement de votre commande</h1>
+    <p>Total à payer : 1000 XOF</p>
+    <button id="pay-button">Payer maintenant</button>
+
+    <script>
+    // Configuration de l'environnement FedaPay
+    FedaPay.setApiKey('sk_live_83-7VhmHhqJs_0-Yca8PIOd8');
+    FedaPay.setEnvironment('live'); // Utilisation de l'environnement de production
+
+    // Création d'une transaction
+    const createTransaction = async () => {
+      try {
+        const transaction = await FedaPay.Transaction.create({
+          description: 'Achat de produit XYZ',
+          amount: 1000,
+          currency: 'XOF',
+          callback_url: 'https://votresite.com/callback',
+          customer: {
+            email: 'client@example.com'
+          }
+        });
+        return transaction;
+      } catch (error) {
+        console.error('Erreur lors de la création de la transaction:', error);
+      }
+    };
+
+    // Initialisation du bouton de paiement
+    const initPaymentButton = async () => {
+      const transaction = await createTransaction();
+      if (transaction) {
+        FedaPay.init({
+          public_key: 'pk_live_TfSz212W0xSMKK7oPEogkFmp'
+        });
+        
+        const payButton = document.getElementById('pay-button');
+        payButton.addEventListener('click', () => {
+          FedaPay.open({
+            transaction: {
+              id: transaction.id
+            }
+          });
+        });
+      }
+    };
+
+    // Appel de la fonction d'initialisation
+    initPaymentButton();
+    </script>
+</body>
+</html>
