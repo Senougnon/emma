@@ -3,58 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Paiement avec FedaPay</title>
-    <script src="https://cdn.fedapay.com/checkout.js"></script>
+    <title>Surveillance des liens - Bouton de paiement</title>
+    <script>
+        // Fonction pour surveiller les requêtes réseau
+        function monitorNetworkRequests() {
+            const originalFetch = window.fetch;
+            window.fetch = function() {
+                console.log('Requête fetch interceptée:', arguments[0]);
+                return originalFetch.apply(this, arguments);
+            };
+
+            const originalXHROpen = XMLHttpRequest.prototype.open;
+            XMLHttpRequest.prototype.open = function() {
+                console.log('Requête XHR interceptée:', arguments[1]);
+                return originalXHROpen.apply(this, arguments);
+            };
+
+            console.log('Surveillance des requêtes réseau activée');
+        }
+
+        // Exécuter la fonction de surveillance au chargement de la page
+        window.addEventListener('load', monitorNetworkRequests);
+    </script>
 </head>
 <body>
-    <h1>Paiement de votre commande</h1>
-    <p>Total à payer : 1000 XOF</p>
-    <button id="pay-button">Payer maintenant</button>
-
-    <script>
-    // Configuration de l'environnement FedaPay
-    FedaPay.setApiKey('sk_live_83-7VhmHhqJs_0-Yca8PIOd8');
-    FedaPay.setEnvironment('live'); // Utilisation de l'environnement de production
-
-    // Création d'une transaction
-    const createTransaction = async () => {
-      try {
-        const transaction = await FedaPay.Transaction.create({
-          description: 'Achat de produit XYZ',
-          amount: 1000,
-          currency: 'XOF',
-          callback_url: 'https://votresite.com/callback',
-          customer: {
-            email: 'client@example.com'
-          }
-        });
-        return transaction;
-      } catch (error) {
-        console.error('Erreur lors de la création de la transaction:', error);
-      }
-    };
-
-    // Initialisation du bouton de paiement
-    const initPaymentButton = async () => {
-      const transaction = await createTransaction();
-      if (transaction) {
-        FedaPay.init({
-          public_key: 'pk_live_TfSz212W0xSMKK7oPEogkFmp'
-        });
-        
-        const payButton = document.getElementById('pay-button');
-        payButton.addEventListener('click', () => {
-          FedaPay.open({
-            transaction: {
-              id: transaction.id
-            }
-          });
-        });
-      }
-    };
-
-    // Appel de la fonction d'initialisation
-    initPaymentButton();
-    </script>
+    <h1>Page de paiement avec surveillance réseau</h1>
+    <form action="index.php" method="POST">
+        <input type="hidden" name="field" value="test">
+        <script
+            src="https://cdn.fedapay.com/checkout.js?v=1.1.7"
+            data-public-key="pk_live_TfSz212W0xSMKK7oPEogkFmp"
+            data-button-text="Pay 35000"
+            data-transaction-amount="35000"
+            data-transaction-description="Transaction description"
+            data-currency-iso="XOF"
+            data-widget-description="Your 100% african store"
+            data-widget-image="https://cdn.fedapay.com/img/marketplace.svg"
+            data-widget-title="Afrimarket">
+        </script>
+    </form>
 </body>
 </html>
