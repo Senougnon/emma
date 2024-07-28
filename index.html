@@ -15,6 +15,7 @@
             color: white;
             font-weight: bold;
             display: none;
+            z-index: 1000;
         }
         .success {
             background-color: #4CAF50;
@@ -27,35 +28,33 @@
 <body>
     <h1>Paiement avec FedaPay</h1>
     
-    <form action="index.php" method="POST">
-        <input type="hidden" name="field" value="test">
-        <script
-            src="https://cdn.fedapay.com/checkout.js?v=1.1.7"
-            data-public-key="pk_live_TfSz212W0xSMKK7oPEogkFmp"
-            data-button-text="Pay 35000"
-            data-transaction-amount="1"
-            data-transaction-description="Transaction description"
-            data-currency-iso="XOF"
-            data-widget-description="Your 100% african store"
-            data-widget-image="https://cdn.fedapay.com/img/marketplace.svg"
-            data-widget-title="Afrimarket">
-        </script>
-    </form>
+    <button id="payButton">Payer 35000 XOF</button>
 
     <div id="notification" class="notification"></div>
 
+    <script src="https://cdn.fedapay.com/checkout.js?v=1.1.7"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             FedaPay.init({
-                public_key: 'YOUR_API_PUBLIC_KEY'
+                public_key: 'pk_live_TfSz212W0xSMKK7oPEogkFmp'
             });
 
-            FedaPay.on('payment.success', function(response) {
-                showNotification('Paiement réussi !', 'success');
-            });
-
-            FedaPay.on('payment.error', function(error) {
-                showNotification('Échec du paiement. Veuillez réessayer.', 'error');
+            document.getElementById('payButton').addEventListener('click', function() {
+                FedaPay.open({
+                    transaction: {
+                        amount: 1,
+                        description: "Transaction description"
+                    },
+                    customer: {
+                        email: 'customer@example.com'
+                    }
+                }, function(response) {
+                    if (response.status === 'approved') {
+                        showNotification('Paiement réussi !', 'success');
+                    } else {
+                        showNotification('Échec du paiement. Veuillez réessayer.', 'error');
+                    }
+                });
             });
 
             function showNotification(message, type) {
@@ -70,8 +69,5 @@
             }
         });
     </script>
-
-    <!-- Remarque : Remplacez YOUR_API_PUBLIC_KEY par la clé publique API de votre compte sandbox ou live. -->
-    <!-- Si vous utilisez votre compte live, vous devez remplacer le lien par https://cdn.fedapay.com/checkout.js?v=1.1.7 -->
 </body>
 </html>
