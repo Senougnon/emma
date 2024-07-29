@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="fr">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
-  <title>Intégration FedaPay Checkout améliorée</title>
+  <title>Intégrer Feda Checkout à mon site</title>
   <script src="https://cdn.fedapay.com/checkout.js?v=1.1.7"></script>
   <style>
     .notification {
@@ -20,71 +20,47 @@
     }
     .success { background-color: #4CAF50; }
     .error { background-color: #f44336; }
-    .fedapay-button {
-      background-color: #007bff;
-      color: white;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 16px;
-    }
+    .info { background-color: #2196F3; }
   </style>
 </head>
 <body>
-  <form id="payment-form">
-    <button id="pay-btn" 
-            class="fedapay-button"
-            data-public-key="pk_live_TfSz212W0xSMKK7oPEogkFmp"
-            data-environment="live"
-            data-trigger="click"
-            data-locale="fr"
-            data-transaction-amount="100"
-            data-transaction-description="Achat de produit"
-            data-customer-email="johndoe@gmail.com"
-            data-customer-firstname="John"
-            data-customer-lastname="Doe"
-            data-customer-phone_number-number="+22967000000"
-            data-customer-phone_number-country="BJ"
-            data-currency-iso="XOF"
-            data-button-text="Payer maintenant"
-            data-button-class="fedapay-button">
-      Payer maintenant
-    </button>
-  </form>
+  <button id="pay-btn">Payer 1 FCFA</button>
   <div id="notification" class="notification"></div>
 
   <script type="text/javascript">
-    FedaPay.init('#pay-btn', {
-      onComplete: function(response) {
-        const notification = document.getElementById('notification');
-        if (response.reason === FedaPay.CHECKOUT_COMPLETED) {
-          if (response.transaction.status === 'approved') {
-            notification.textContent = 'Paiement réussi !';
-            notification.className = 'notification success';
-          } else {
-            notification.textContent = 'Le paiement n\'a pas été approuvé.';
-            notification.className = 'notification error';
-          }
-        } else if (response.reason === FedaPay.DIALOG_DISMISSED) {
-          notification.textContent = 'Paiement annulé par l\'utilisateur.';
-          notification.className = 'notification error';
-        }
-        notification.style.display = 'block';
-        setTimeout(() => {
-          notification.style.display = 'none';
-        }, 5000);
+    function showNotification(message, type) {
+      const notification = document.getElementById('notification');
+      notification.textContent = message;
+      notification.className = `notification ${type}`;
+      notification.style.display = 'block';
+      setTimeout(() => {
+        notification.style.display = 'none';
+      }, 5000);
+    }
 
-        // Log de la transaction pour le débogage
-        console.log('Détails de la transaction:', response.transaction);
-      },
+    FedaPay.init('#pay-btn', {
+      public_key: 'pk_live_TfSz212W0xSMKK7oPEogkFmp',
       transaction: {
-        custom_metadata: {
-          client_id: '12345',
-          product_name: 'Produit Premium'
-        }
+        amount: 1,
+        description: 'Acheter mon produit'
       },
-      submit_form_on_failed: true
+      customer: {
+        email: 'johndoe@gmail.com',
+        lastname: 'Doe',
+        firstname: 'John',
+      },
+      onComplete: function(reason, transaction) {
+        if (reason === FedaPay.CHECKOUT_COMPLETED) {
+          if (transaction.status === 'approved') {
+            showNotification(`Paiement réussi ! ID de transaction : ${transaction.id}`, 'success');
+          } else {
+            showNotification(`Échec du paiement. Statut : ${transaction.status}`, 'error');
+          }
+        } else if (reason === FedaPay.DIALOG_DISMISSED) {
+          showNotification("Paiement annulé par l'utilisateur",'info');
+        }
+        console.log('Détails de la transaction:', transaction);
+      }
     });
   </script>
 </body>
