@@ -1,70 +1,103 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>MeSomb Payment Form</title>
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MeSomb Payment Form</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
+        form { display: flex; flex-direction: column; }
+        label { margin-top: 10px; }
+        input, select { margin-bottom: 10px; padding: 5px; }
+        button { margin-top: 10px; padding: 10px; background-color: #4CAF50; color: white; border: none; cursor: pointer; }
+        #notification { display: none; margin-top: 20px; padding: 10px; border-radius: 5px; }
+        .success { background-color: #4CAF50; color: white; }
+        .error { background-color: #f44336; color: white; }
+    </style>
 </head>
 <body>
-  <h1>MeSomb Payment Form</h1>
-  <form id="paymentForm">
-    <label for="amount">Amount:</label>
-    <input type="number" id="amount" name="amount" required><br><br>
+    <h1>MeSomb Payment Form</h1>
+    <form id="paymentForm">
+        <label for="amount">Amount:</label>
+        <input type="number" id="amount" required>
 
-    <label for="payer">Phone Number:</label>
-    <input type="tel" id="payer" name="payer" placeholder="e.g. 670090909" required><br><br>
+        <label for="service">Service:</label>
+        <select id="service" required>
+            <option value="MTN">MTN</option>
+            <option value="ORANGE">ORANGE</option>
+        </select>
 
-    <label for="service">Service:</label>
-    <select id="service" name="service">
-      <option value="MTN">MTN</option>
-      <option value="ORANGE">ORANGE</option>
-    </select><br><br>
+        <label for="payer">Payer Phone Number:</label>
+        <input type="tel" id="payer" required pattern="\d{8,16}">
 
-    <button type="submit">Pay Now</button>
-  </form>
+        <button type="submit">Pay</button>
+    </form>
 
-  <div id="paymentResult" style="display: none;">
-    <h2>Payment Result</h2>
-    <p id="resultMessage"></p>
-  </div>
+    <div id="notification"></div>
 
-  <script>
-    $(document).ready(function() {
-      $("#paymentForm").submit(function(event) {
-        event.preventDefault();
+    <script>
+        const applicationKey = '9b80d408cb3b0577c2a8125bc0739cfcdca9d090';
+        const accessKey = '0587676c-e84e-491c-8114-49bc3e018e77';
+        const secretKey = 'ff7ce77c-c94e-4e74-aaa7-69553b811bde';
 
-        var amount = $("#amount").val();
-        var payer = $("#payer").val();
-        var service = $("#service").val();
+        function showNotification(message, isSuccess) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = isSuccess ? 'success' : 'error';
+            notification.style.display = 'block';
+        }
 
-        $.ajax({
-          url: "https://mesomb.hachther.com/api/v1.1/payment/collect/",
-          type: "POST",
-          headers: {
-            "X-MeSomb-Application": "9b80d408cb3b0577c2a8125bc0739cfcdca9d090", // Replace with your Application Key
-            "Content-Type": "application/json"
-          },
-          data: JSON.stringify({
-            "amount": amount,
-            "payer": payer,
-            "service": service,
-            "country": "CM",
-            "currency": "XAF"
-          }),
-          success: function(data) {
-            if (data.success) {
-              $("#resultMessage").text("Payment successful! Transaction ID: " + data.transaction.pk);
-            } else {
-              $("#resultMessage").text("Payment failed! " + data.message);
+        function generateSignature(method, url, timestamp, nonce, body) {
+            const message = method + url + timestamp + nonce + JSON.stringify(body);
+            return CryptoJS.HmacSHA256(message, secretKey).toString();
+        }
+
+        document.getElementById('paymentForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const amount = document.getElementById('amount').value;
+            const service = document.getElementById('service').value;
+            const payer = document.getElementById('payer').value;
+
+            const timestamp = Math.floor(Date.now() / 1000).toString();
+            const nonce = CryptoJS.lib.WordArray.random(16).toString();
+
+            const body = {
+                amount: parseFloat(amount),
+                service: service,
+                payer: payer,
+                currency: 'XAF',
+                country: 'CM'
+            };
+
+            const signature = generateSignature('POST', '/api/v1.1/payment/collect/', timestamp, nonce, body);
+
+            try {
+                const response = await fetch('https://mesomb.hachther.com/api/v1.1/payment/collect/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-MeSomb-Application': applicationKey,
+                        'X-MeSomb-AccessKey': accessKey,
+                        'X-MeSomb-Nonce': nonce,
+                        'X-MeSomb-Timestamp': timestamp,
+                        'X-MeSomb-Signature': signature
+                    },
+                    body: JSON.stringify(body)
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    showNotification('Payment successful!', true);
+                } else {
+                    showNotification('Payment failed: ' + (data.message || 'Unknown error'), false);
+                }
+            } catch (error) {
+                showNotification('Error processing payment: ' + error.message, false);
             }
-            $("#paymentResult").show();
-          },
-          error: function(xhr, status, error) {
-            $("#resultMessage").text("Payment failed! Error: " + error);
-            $("#paymentResult").show();
-          }
         });
-      });
-    });
-  </script>
+    </script>
 </body>
 </html>
