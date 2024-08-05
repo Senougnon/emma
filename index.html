@@ -1,80 +1,70 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>MeSomb Payment Form</title>
+  <title>MeSomb Payment Form</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 </head>
 <body>
+  <h1>MeSomb Payment Form</h1>
+  <form id="paymentForm">
+    <label for="amount">Amount:</label>
+    <input type="number" id="amount" name="amount" required><br><br>
 
-<h2>MeSomb Payment</h2>
+    <label for="payer">Phone Number:</label>
+    <input type="tel" id="payer" name="payer" placeholder="e.g. 670090909" required><br><br>
 
-<form id="payment-form">
-  <label for="amount">Amount:</label>
-  <input type="number" id="amount" name="amount" value="100" required><br><br>
+    <label for="service">Service:</label>
+    <select id="service" name="service">
+      <option value="MTN">MTN</option>
+      <option value="ORANGE">ORANGE</option>
+    </select><br><br>
 
-  <label for="payer">Phone Number:</label>
-  <input type="tel" id="payer" name="payer" placeholder="2376XXXXXXXX" required><br><br>
+    <button type="submit">Pay Now</button>
+  </form>
 
-  <label for="service">Service:</label>
-  <select id="service" name="service" required>
-    <option value="MTN">MTN Mobile Money</option>
-    <option value="ORANGE">Orange Money</option>
-  </select><br><br>
+  <div id="paymentResult" style="display: none;">
+    <h2>Payment Result</h2>
+    <p id="resultMessage"></p>
+  </div>
 
-  <button type="submit">Pay Now</button>
-</form>
+  <script>
+    $(document).ready(function() {
+      $("#paymentForm").submit(function(event) {
+        event.preventDefault();
 
-<div id="payment-result"></div>
+        var amount = $("#amount").val();
+        var payer = $("#payer").val();
+        var service = $("#service").val();
 
-<script>
-const form = document.getElementById("payment-form");
-form.addEventListener("submit", (event) => {
-  event.preventDefault(); // Prevent default form submission
-
-  // Your MeSomb Application Key
-  const applicationKey = "9b80d408cb3b0577c2a8125bc0739cfcdca9d090";
-
-  // Get payment details from the form
-  const paymentData = {
-    amount: parseFloat(document.getElementById("amount").value),
-    payer: document.getElementById("payer").value,
-    fees: true,
-    service: document.getElementById("service").value,
-    country: "CM",
-    currency: "XAF"
-  };
-
-  // Construct the request
-  const requestOptions = {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-MeSomb-Application": applicationKey
-    },
-    body: JSON.stringify(paymentData)
-  };
-
-  // Make the API call
-  fetch("/api/v1.1/payment/collect/", requestOptions)
-    .then(response => response.json())
-    .then(data => {
-      // Handle the response
-      if (data.success) {
-        displayResult("Payment successful!");
-      } else {
-        displayResult(`Payment failed: ${data.message}`);
-      }
-    })
-    .catch(error => {
-      console.error("Error:", error);
-      displayResult("An error occurred during payment.");
+        $.ajax({
+          url: "https://mesomb.hachther.com/api/v1.1/payment/collect/",
+          type: "POST",
+          headers: {
+            "X-MeSomb-Application": "9b80d408cb3b0577c2a8125bc0739cfcdca9d090", // Replace with your Application Key
+            "Content-Type": "application/json"
+          },
+          data: JSON.stringify({
+            "amount": amount,
+            "payer": payer,
+            "service": service,
+            "country": "CM",
+            "currency": "XAF"
+          }),
+          success: function(data) {
+            if (data.success) {
+              $("#resultMessage").text("Payment successful! Transaction ID: " + data.transaction.pk);
+            } else {
+              $("#resultMessage").text("Payment failed! " + data.message);
+            }
+            $("#paymentResult").show();
+          },
+          error: function(xhr, status, error) {
+            $("#resultMessage").text("Payment failed! Error: " + error);
+            $("#paymentResult").show();
+          }
+        });
+      });
     });
-});
-
-function displayResult(message) {
-  const resultDiv = document.getElementById("payment-result");
-  resultDiv.innerHTML = `<p>${message}</p>`;
-}
-</script>
-
+  </script>
 </body>
 </html>
