@@ -1,28 +1,62 @@
-<?php
-if (isset($_POST['field'])) {
-    die(var_dump($_POST));
-}
-?>
-
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FedaPay Payment Form</title>
+<title>MeSomb Payment Button</title>
 </head>
 <body>
-    <form action="index.php" method="POST">
-        <input type="hidden" name="field" value="test">
-        <script
-            src="https://cdn.fedapay.com/checkout.js?v=1.1.7"
-            data-public-key="pk_live_TfSz212W0xSMKK7oPEogkFmp"
-            data-button-text="Payer 1000"
-            data-button-class="button-class"
-            data-transaction-amount="1"
-            data-transaction-description="Description de la transaction"
-            data-currency-iso="XOF">
-        </script>
-    </form>
+
+  <button id="paymentButton">Pay Now</button>
+
+  <script>
+    const paymentButton = document.getElementById('paymentButton');
+
+    paymentButton.addEventListener('click', () => {
+      // Replace with your actual MeSomb application key
+      const applicationKey = '9b80d408cb3b0577c2a8125bc0739cfcdca9d090'; 
+
+      // Payment details
+      const paymentData = {
+        amount: 100, // Amount to be paid
+        payer: '670090909', // Replace with the actual payer's phone number
+        fees: true,
+        service: 'MTN', // or 'ORANGE' depending on the payment method
+        country: 'CM',
+        currency: 'XAF'
+      };
+
+      // Make the API call
+      fetch('/api/v1.1/payment/collect/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-MeSomb-Application': applicationKey
+        },
+        body: JSON.stringify(paymentData)
+      })
+      .then(response => response.json())
+      .then(data => {
+        // Handle the response
+        if (data.success) {
+          // Payment successful
+          alert('Payment successful!');
+          // You can optionally redirect to a success page
+          // window.location.href = data.redirect;
+        } else {
+          // Payment failed
+          alert('Payment failed. Please try again.');
+        }
+      })
+      .catch(error => {
+        // Handle errors
+        console.error('Error:', error);
+        alert('An error occurred. Please try again later.');
+      });
+    });
+  </script>
+
 </body>
 </html>
+
+
+
+
