@@ -1,62 +1,83 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>MeSomb Payment Button</title>
+<title>MeSomb Payment Form</title>
 </head>
 <body>
 
-  <button id="paymentButton">Pay Now</button>
+<h2>MeSomb Payment</h2>
 
-  <script>
-    const paymentButton = document.getElementById('paymentButton');
+<form id="payment-form">
+  <label for="amount">Amount:</label>
+  <input type="number" id="amount" name="amount" value="100" required><br><br>
 
-    paymentButton.addEventListener('click', () => {
-      // Replace with your actual MeSomb application key
-      const applicationKey = '9b80d408cb3b0577c2a8125bc0739cfcdca9d090'; 
+  <label for="payer">Phone Number:</label>
+  <input type="tel" id="payer" name="payer" placeholder="2376XXXXXXXX" required><br><br>
 
-      // Payment details
-      const paymentData = {
-        amount: 100, // Amount to be paid
-        payer: '670090909', // Replace with the actual payer's phone number
-        fees: true,
-        service: 'MTN', // or 'ORANGE' depending on the payment method
-        country: 'CM',
-        currency: 'XAF'
-      };
+  <label for="service">Service:</label>
+  <select id="service" name="service" required>
+    <option value="MTN">MTN Mobile Money</option>
+    <option value="ORANGE">Orange Money</option>
+  </select><br><br>
 
-      // Make the API call
-      fetch('/api/v1.1/payment/collect/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-MeSomb-Application': applicationKey
-        },
-        body: JSON.stringify(paymentData)
-      })
-      .then(response => response.json())
-      .then(data => {
-        // Handle the response
-        if (data.success) {
-          // Payment successful
-          alert('Payment successful!');
-          // You can optionally redirect to a success page
-          // window.location.href = data.redirect;
-        } else {
-          // Payment failed
-          alert('Payment failed. Please try again.');
-        }
-      })
-      .catch(error => {
-        // Handle errors
-        console.error('Error:', error);
-        alert('An error occurred. Please try again later.');
-      });
+  <button type="submit">Pay Now</button>
+</form>
+
+<div id="payment-result"></div>
+
+<script>
+const form = document.getElementById("payment-form");
+form.addEventListener("submit", (event) => {
+  event.preventDefault(); // Prevent default form submission
+
+  // Replace with your actual MeSomb Application Key
+  const applicationKey = "9b80d408cb3b0577c2a8125bc0739cfcdca9d090";
+
+  // Get payment details from the form
+  const paymentData = {
+    amount: parseFloat(document.getElementById("amount").value),
+    payer: document.getElementById("payer").value,
+    fees: true,
+    service: document.getElementById("service").value,
+    country: "CM",
+    currency: "XAF"
+  };
+
+  // Construct the request
+  const requestOptions = {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-MeSomb-Application": applicationKey
+    },
+    body: JSON.stringify(paymentData)
+  };
+
+  // Make the API call
+  fetch("/api/v1.1/payment/collect/", requestOptions)
+    .then(response => response.json())
+    .then(data => {
+      // Handle the response
+      if (data.success) {
+        displayResult("Payment successful!");
+      } else {
+        displayResult(`Payment failed: ${data.message}`);
+      }
+    })
+    .catch(error => {
+      console.error("Error:", error);
+      displayResult("An error occurred during payment.");
     });
-  </script>
+});
+
+function displayResult(message) {
+  const resultDiv = document.getElementById("payment-result");
+  resultDiv.innerHTML = `<p>${message}</p>`;
+}
+</script>
 
 </body>
 </html>
-
 
 
 
